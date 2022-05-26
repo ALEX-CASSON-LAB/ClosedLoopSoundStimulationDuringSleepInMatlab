@@ -1,7 +1,7 @@
 # Closed Loop Sound Stimulation During Sleep In Matlab
 
 ## About
-This is a Matlab App which streams EEG data in real-time, detects the presence of a slow oscillation, and plays audio-tones after a delay. This is our implementation of an auditory closed loop stimulation platform as first described in https://doi.org/10.1016/j.neuron.2013.03.006. Our implementation in Matlab to allow easy exploration of different settings, stimulation protocols, delays, sounds and similar compared to using a lower level language (if using a higher level language introduces its own challenges).
+This is a Matlab App which streams EEG data in real-time, detects the presence of a slow oscillation, and plays audio-tones after a delay. It is our implementation of an auditory closed loop stimulation platform as first described in https://doi.org/10.1016/j.neuron.2013.03.006. Our implementation is in Matlab to allow easy exploration of different settings, stimulation protocols, delays, sounds and similar compared to using a lower level language (if using a higher level language introduces its own challenges).
 
 The App interfaces with a Natus Embla EEG amplifier and RemLogic PSG software, and out of the box will only operate with these. It was designed to run on a background service optimized, non-networked, lab PC running Windows 7. Service optimization included turning off all non-essential background tasks, and running Matlab at a higher priority level. The computer has Matlab 2007b, with a limited set of toolboxes. Thus, some functions which would be 'easy' with newer versions of Matlab or with particular toolboxes are hard coded.
 
