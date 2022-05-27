@@ -8,8 +8,10 @@ The App interfaces with a Natus Embla EEG amplifier and RemLogic PSG software, a
 The code has been used in our publication DOI: XXX - TBC at time of publication. 
 
 ## Operation
-We have a large number of different configurations of the system. These will present different sounds to the participant, e.g. pink noise or recognisable sounds, different lengths of trains, and similar. Thus large parts of the code made be commented out depending on which mode is being used. The text below overviews the general mode operation.  
+We have a large number of different configurations of the system. These will present different sounds to the participant, e.g. pink noise or recognisable sounds, different lengths of trains, and similar. Thus large parts of the code made be commented out depending on which mode is being used. The text below overviews the general mode operation.
+
 stim_gui.m is the main launch script and is run from the Matlab command prompt to start the processing. This calls stim_gui_functions.m which generates the GUI. It calls stim_main.m which returns a timer object t. This timer is started when people press the start button and the actions are then performed by this timer. The set up of the timer includes calling generate_sounds.m which makes the different sounds to be played to the participant.  It is assumed that an experimenter is present monitoring the incoming EEG and who turns the sound stimulation on and off depending on whether the participant is in deep sleep. We have two sleep rooms, and calibrated the volume (using data in calibration.xlsx) for the headphones used in each room to give the same measured volume. 
+
 The timer t is set to run every 100 ms by default. When it runs it calls get_and_process_data.m. This loads the last 30 s of data and filters it into the SO band. (Filter coefficients were generated offline using the Matlab butter command and saved in butterworth_coefficients.m). Before filtering the data is mirrored to avoid edge effects, but there is no correction of the group delay introduced by the filtering. Filtered data is then passed to state_machine.m which makes the decision of whether to stimulate or not.
  
 ## License information
