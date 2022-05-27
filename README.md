@@ -21,6 +21,7 @@ This code uses the following third party tools:
  - generate_sounds.m: The 1/f noise filter in this function uses the algorithm from Kasdin, N.J.. Discrete simulation of colored noise and stochastic processes and
 1/f^{\alpha} power law noise generation. Proc IEEE 1995;83(5):802–27. The code was taken from a "Matlab answer" (https://uk.mathworks.com/matlabcentral/answers) to a 2007 post called "How to do I generate pink noise in Matlab or Simulink?". As far as we are aware this post is no longer online, but the code was freely available online for use. 
  - ebm_header.m: Uses code from the biosig project http://biosig.sourceforge.net/ and https://doi.org/10.1155%2F2011%2F935364 which is released under a GPL3 license. This project uses a GPL3 to match this. See LICENSE for details.
+ -  nircmd.exe: Is shared from https://www.nirsoft.net/utils/nircmd.html. It is released as freefare with re-distribution rights as long all all of the files in the package (in nircmd.zip) are shared without modification.
 
 ## Acknowledgements
 We would like to thank Jussi Virkkala, Physicist at Helsingin ja Uudenmaan sairaanhoitopiiri, Finland for his assistance in loading RemLogic EEG traces in to Matlab in real-time.
