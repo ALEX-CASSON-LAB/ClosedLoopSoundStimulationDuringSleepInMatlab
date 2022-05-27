@@ -1,4 +1,4 @@
-function t = stim_main(param)
+function t = stim_main(param,sound_library,f_samp)
 %% Alex Casson
 % 
 % Versions
@@ -19,13 +19,10 @@ status = 'online'; % 'offline' for testing or 'online' for use
 epoch   = 30;  % seconds
 
 
-%% Generate matrix of sounds to play
-[sound_library, f_samp] = generate_sounds;
-
-
 %% Set up data source
 channel{1} = param.ac;
 channel{2} = param.rc;
+channel{3} = param.rc2;
 [filename, begin, scale, fid] = get_data_source(status,channel);
 
 

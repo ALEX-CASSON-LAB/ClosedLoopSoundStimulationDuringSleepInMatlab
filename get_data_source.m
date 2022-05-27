@@ -19,6 +19,7 @@ if strcmp(status,'online');
     folder = ls(idx(end)).name;
     filename{1} = [basedir '\' folder '\' channel{1} '.ebm'];
     filename{2} = [basedir '\' folder '\' channel{2} '.ebm'];
+    filename{3} = [basedir '\' folder '\' channel{3} '.ebm'];
     
     config_io; % set up the Embla triggers
     outp(888,0);
@@ -27,6 +28,7 @@ if strcmp(status,'online');
 elseif strcmp(status,'offline'); 
     filename{1} = '..\example_offline_data\C4.ebm';
     filename{2} = '..\example_offline_data\M1.ebm';
+    filename{3} = '..\example_offline_data\M2.ebm';
 
 % Error check
 else
@@ -43,3 +45,4 @@ scale  = header.Cal * 1e6; % Embla stores in V so convert to muV for plot
 %% Open file for processing
 fid(1) = fopen(filename{1},'rb');
 fid(2) = fopen(filename{2},'rb');
+fid(3) = fopen(filename{3},'rb');

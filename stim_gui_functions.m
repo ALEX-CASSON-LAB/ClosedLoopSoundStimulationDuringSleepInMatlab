@@ -14,22 +14,30 @@ function handles = stim_gui_functions(hObject,handles)
 vol_max = 65535; vol_min = 0;
 system(['.\nircmd setsysvolume ' num2str(vol_max)]);
 
+% Gemerate sounds to test play
+[sound_library, f_samp] = generate_sounds;
+
+% Load sound calibrations
+volume_fit = load('volume_fit.mat');
 
 %% Set default values
 
 % User controllable
-handles.param.ac = 'X1';
-handles.param.rc = 'M1';
-handles.param.fs = 200;
-handles.param.dt = -80;
-handles.param.fd = 0.55;
-handles.param.sd = 1.075;
-handles.param.vl = 1; % note values are stored as magnitudes, displayed as dB
+handles.param.ac  = 'X1';
+handles.param.rc  = 'M1';
+handles.param.rc2 = 'M2'; % for linked mastoid reference. Second reference channel is not displayed in GUI
+handles.param.fs  = 200;
+handles.param.dt  = -80;
+handles.param.fd  = 0.55;
+handles.param.sd  = 1.075;
+handles.param.vl  = 1; % note values are stored as magnitudes, displayed as dB
 
 % Non-user controllable
-handles.param.td = 10.;
+handles.param.td = 10.0;
 handles.param.state = 0; % start with the algorithm running
 handles.param.night = 'Sham';
+handles.param.room  = 'Room 2';
+handles.param.vl_fit = volume_fit.room2; % should match line above
 handles.param.an    = 'Off';
 handles.param.ax    = handles.axes1;
 handles.param.plot_data = NaN;
@@ -37,7 +45,7 @@ handles.param.align = 0.5;
 buffer = 1;
 handles.param.plot_avg  = [100, handles.param.fd+handles.param.sd+handles.param.td+buffer, 1]; % [number of averages to use, number of seconds to plot + 1, internal counter]
 handles.param.sp = 'Off';
-handles.param.loops = 9; % loops + 1 tones are played in the state 6 case
+handles.param.loops = 3; % loops + 1 tones are played in the state 6 case
 handles.param.counter = 1; % internal counter
 handles.param.shuffle = [1 zeros(1,handles.param.loops)]; % 1=looped clicks, 0=single click
 handles.param.h = actxserver('WScript.Shell');
@@ -49,7 +57,7 @@ guidata(hObject,handles);
 
 
 %% Set up the timers
-t = stim_main(handles.param);
+t = stim_main(handles.param,sound_library,f_samp);
 handles.timer = t;
 guidata(hObject,handles);
 
@@ -74,7 +82,7 @@ top = 610;
 
 
 %% Night
-nt_options = {'Sham','Stim','Adapt'};
+nt_options = {'Sham','Stim 1','Stim 4','Adapt'};
 position = [20 top-20 100 50];
 nt_txt   = uicontrol('Style','text','Position',position,'String','Night','HorizontalAlignment','Right');
 position = [position(1)+position(3)+5 position(2)+3 100 50];
@@ -112,6 +120,7 @@ ac_popup = uicontrol('Style','popup','String',ac_options,'Position',position,'Va
         h.param.ac = ac;
         guidata(gcbo,h)
     end
+set(ac_popup,'Enable','Off');
 
 
 %% Reference channel
@@ -128,6 +137,7 @@ rc_popup = uicontrol('Style','popup','String',rc_options,'Position',position,'Va
         h.param.rc = rc;
         guidata(gcbo,h)
     end
+set(rc_popup,'Enable','Off');
 
 
 %% Sampling frequency
@@ -146,7 +156,7 @@ fs_txt   = uicontrol('Style','text','Position',position,'String','Hz','Horizonta
         h.param.fs = fs;
         guidata(gcbo,h)
     end
-
+set(fs_popup,'Enable','Off');
 
 %% Adpat night sound
 position = [260 top-20 100 50];
@@ -220,9 +230,9 @@ sd_txt   = uicontrol('Style','text','Position',position,'String','s','Horizontal
 
 
 %% Save plot
-position = [260 top-220 100 25];
+position = [425 top+15 100 15];
 sp_txt   = uicontrol('Style','text','Position',position,'String','Save plot data','HorizontalAlignment','Right');
-position = [position(1)+position(3)+5 position(2)+30-25 100 25];
+position = [position(1)+position(3)+5 position(2)+30-35 100 25];
 sp_check = uicontrol('Style','checkbox','Position',position,'Value',0,'Callback',@sp_Callback);
     function sp_Callback(source,eventdata) 
         val = get(source,'Value');
@@ -237,29 +247,63 @@ sp_check = uicontrol('Style','checkbox','Position',position,'Value',0,'Callback'
     end
 
 
+%% Format axes
+grid(handles.param.ax,'on');
+xlim([-2 5])
+xlabel(handles.param.ax,'Time / s');
+ylabel(handles.param.ax,'SO / \muV')
+
+
+%% Room select for volume fitting
+vf_options = {'Room 1','Room 2'};
+position = [20 top-220 100 50];
+vf_txt   = uicontrol('Style','text','Position',position,'String','Room','HorizontalAlignment','Right');
+position = [position(1)+position(3)+5 position(2)+3 100 50];
+[v, default] = max(strcmp(handles.param.room,vf_options));
+vf_popup = uicontrol('Style','popup','String',vf_options,'Position',position,'Value',default,'Callback',@vf_Callback); 
+    function vf_Callback(source,eventdata) 
+        val = get(source,'Value');
+        room = vf_options{val};
+        if strcmp('Room 1',room)
+            vl_fit = volume_fit.room1;
+        elseif strcmp('Room 2',room)
+            vl_fit = volume_fit.room2;
+        else
+            error('Room not correctly set')
+        end
+        disp([datestr(now) ' Info. Room changed. Now: ' room]);
+        
+        % Update handles     
+        h = guidata(gcbo);
+        h.param.room = room;
+        h.param.vl_fit = vl_fit;
+        guidata(gcbo,h)
+        
+        % Update volume GUI
+        vol_Callback(vol_slide,NaN);
+    end
+
+
 %% Volume slider
 vol_step = [0.01 0.03]; % 1% (1dB) minor change, 3% (3dB) major change
-
-position = [20 top-220 100 50];
+position = [260 top-220+35 100 15];
 vol_txt   = uicontrol('Style','text','Position',position,'String','Volume','HorizontalAlignment','right');
-position = [position(1)+position(3)+5 position(2)+33 340 20];
-vol_slide = uicontrol('Style','slider','Min',-100,'Max',0,'Value',mag2db_alex(handles.param.vl),'SliderStep',vol_step,'Position',position,'Callback',@vol_Callback);
-position = [position(1)+position(3)+5 position(2)-33 100 50];
-vol_out   = uicontrol('Style','text','Position',position,'String',[num2str(mag2db_alex(handles.param.vl)) ' dB'],'HorizontalAlignment','left');    
+position = [position(1)+position(3)+5 position(2)+33-35 175 20];
+vol_slide = uicontrol('Style','slider','Min',-70,'Max',0,'Value',mag2db_alex(handles.param.vl),'SliderStep',vol_step,'Position',position,'Callback',@vol_Callback);
+position = [top-220 400 150 15];
+vol_out   = uicontrol('Style','text','Position',position,'String',[num2str(calibrated_volume(mag2db_alex(handles.param.vl),handles.param.vl_fit),4) ' dB'],'HorizontalAlignment','Right');
     function vol_Callback(source,eventdata)
-        vl = get(source,'Value');
-        set(vol_out,'String',[num2str(vl) ' dB']);
-        disp([datestr(now) ' Info. Volume changed. Now: ' num2str(vl) ' dB']);
         h = guidata(gcbo);
+        vl = get(source,'Value');
+        vl_display = calibrated_volume(vl,h.param.vl_fit);
+        
+        set(vol_out,'String',[num2str(vl_display,4) ' dB']);
+        disp([datestr(now) ' Info. Volume changed. Now: ' num2str(vl_display,4) ' dB']);
+        
         h.param.vl = db2mag_alex(vl);
         guidata(gcbo,h)
     end
 
-
-%% Format axes
-grid(handles.param.ax,'on');
-xlabel(handles.param.ax,'Time / s');
-ylabel(handles.param.ax,'SO / \muV')
 
 
 %% Start button
@@ -279,23 +323,23 @@ play_button = uicontrol('Style','pushbutton','Position',position,'String','Start
             grid(h.param.ax,'on');
             xlabel(h.param.ax,'Time / s');
             ylabel(h.param.ax,'SO / \muV');
-            
+            xlim([-2 5])            
             % Start timer
             start(h.timer);
             disp([datestr(now) ' Info. Algorithm started.']);
+            disp([datestr(now) ' Info. Stimulation set to: ' h.param.night]);
             
             % Prevent GUI changes while running
             set(nt_popup,'Enable','Off');
-            set(ac_popup,'Enable','Off');
-            set(rc_popup,'Enable','Off');
-            set(fs_popup,'Enable','Off');
             set(an_check,'Enable','Off');
             set(dt_edit,'Enable','Off');
             set(fd_edit,'Enable','Off');
             set(sd_edit,'Enable','Off');
             set(vol_slide,'Enable','Off');
             set(play_button,'Enable','Off');
+            set(vf_popup,'Enable','Off');
             guidata(gcbo,h)
+            
     end
 
 
@@ -326,15 +370,13 @@ stop_button = uicontrol('Style','pushbutton','Position',position,'String','Stop'
             
             % Enable GUI changes while running
             set(nt_popup,'Enable','On');
-            set(ac_popup,'Enable','On');
-            set(rc_popup,'Enable','On');
-            set(fs_popup,'Enable','On');
             set(an_check,'Enable','On');
             set(dt_edit,'Enable','On');
             set(fd_edit,'Enable','On');
             set(sd_edit,'Enable','On');
             set(vol_slide,'Enable','On');
             set(play_button,'Enable','On');
+            set(vf_popup,'Enable','On');
             guidata(gcbo,h)
     end
 
@@ -406,5 +448,23 @@ stop_button = uicontrol('Style','pushbutton','Position',position,'String','Check
         disp(h.param)
     end
 
+
+%% Play dummy sound
+position = [10 top-190 65 25];
+play_button = uicontrol('Style','pushbutton','Position',position,'String','Test','FontWeight','Bold','Callback',@play_Callback);
+    function play_Callback(source,eventdata)
+        h = guidata(gcbo);
+        
+        % Display log
+        vl_db = mag2db_alex(h.param.vl);
+        vl_display = calibrated_volume(vl_db,h.param.vl_fit);
+        disp([datestr(now) ' Info. Test sound played with volume: ' num2str(vl_display,4) ' dB']);
+        
+        % Play sound. Note this is fragile - needs to follow any changes to
+        % play_sound.m
+        vl = h.param.vl; count = 1;
+        outp(888,1); play_sound_function(vl,sound_library,count,f_samp); outp(888,0);
+    end
+uistack(play_button,'top')
 
 end

@@ -15,6 +15,7 @@ param.count = 0;
 param.data_count = 0;
 param.time_played = NaN;
 param.play_flag = 'noplay';
+param.marker_flag = 'marker';
 param.vl = volume;
 
 

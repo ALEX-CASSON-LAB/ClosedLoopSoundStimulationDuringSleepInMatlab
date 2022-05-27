@@ -15,8 +15,8 @@ T = timerfind;
 if ~isempty(T), stop(T); delete(T); end
 warning('off','MATLAB:TIMER:STARTDELAYPRECISION');
 warning('off','MATLAB:timer:deleterunning')
-rand('state',sum(100.*clock));
-
+%rand('state',sum(100.*clock)); % fully random
+rand('state',2.100768e5); % same on each go
 
 %% Check RemLogic is set up this. 
 start_up_check = questdlg('Has RemLogic been started and is streaming data?','Start up check','Yes','No','Yes');

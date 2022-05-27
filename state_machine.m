@@ -16,7 +16,7 @@ measured_correction_fd = 0;
 measured_correction_sd = 0;
 measured_correction_td = 0;
 
-measured_correction_fd = 120e-3;
+measured_correction_fd = 183e-3;
 %measured_correction_sd = 20e-3;
 %measured_correction_td = 24e-3;
 
@@ -30,69 +30,71 @@ if param.state == 0
     %disp(locations)
 
     % Check whether any detections are made
-    if isempty(locations) % no trough detected
+    if isempty(locations) || numel(locations) == 0 % no trough detected
         param.state = 0;
-        return
+
     else
         location = locations(end);
         time_from_end = (length(alg_in) - location) / param.fs;
         peak = peaks(end);
-    end
+
     
-    % Check that this is a new detection 
-    if (time_from_end < param.fd) && strcmp(s.Running,'off')
-        
-        %disp(num2str(data_count))
-%         figure(2);
-%         detect_time = time_vector(location);
-%         disp([datestr(time_vector(location),'SS.FFF') ' ' num2str(data_count) ' Info. Detect time.']);
-%         play_time = detect_time + (param.fd / (24 * 60 * 60)); 
-%         line([detect_time detect_time], ylim,'LineWidth',2,'Color','g','LineStyle','-.');
-%         line([play_time play_time], ylim,'LineWidth',1,'Color','r','LineStyle','-');
-%         play_time = detect_time + (0.55 / (24 * 60 * 60)); 
-%         line([play_time play_time], ylim,'LineWidth',1,'Color','r','LineStyle','-');
-%         
-%         figure(3);
-%         detect_time = time(location);
-%         play_time = detect_time + param.fd; 
-%         line([detect_time detect_time], ylim,'LineWidth',2,'Color','g','LineStyle','-.');
-%         line([play_time play_time], ylim,'LineWidth',1,'Color','r','LineStyle','-');
-%         play_time = detect_time + 0.55; 
-%         line([play_time play_time], ylim,'LineWidth',1,'Color','r','LineStyle','-');
-        
-        % Set sound to play if needed
-        if strcmpi(param.night,'Stim') || (strcmpi(param.night,'Adapt') && strcmpi(param.an,'On'))
-            set_play_flag(s,'play');
-        elseif strcmpi(param.night,'Sham') || (strcmpi(param.night,'Adapt') && strcmpi(param.an,'Off'))
-            set_play_flag(s,'noplay');
-        else
-            error('Incorrect play flag. Not clear whether to play sound or not.');
+        % Check that this is a new detection 
+        if (time_from_end < param.fd) && strcmp(s.Running,'off')
+
+            %disp(num2str(data_count))
+            %figure(2);
+            detect_time = time_vector(location);
+            %line([detect_time detect_time], ylim,'LineWidth',2,'Color','g','LineStyle','-.');
+            %disp([datestr(time_vector(location),'SS.FFF') ' ' num2str(data_count) ' Info. Detect time.']);
+            play_time = detect_time + (param.fd / (24 * 60 * 60)); 
+            %line([play_time play_time], ylim,'LineWidth',1,'Color','r','LineStyle','-');
+            %play_time = detect_time + (0.55 / (24 * 60 * 60)); 
+            %line([play_time play_time], ylim,'LineWidth',1,'Color','r','LineStyle','-');
+    %         
+    %         figure(3);
+    %         detect_time = time(location);
+    %         play_time = detect_time + param.fd; 
+    %         line([detect_time detect_time], ylim,'LineWidth',2,'Color','g','LineStyle','-.');
+    %         line([play_time play_time], ylim,'LineWidth',1,'Color','r','LineStyle','-');
+    %         play_time = detect_time + 0.55; 
+    %         line([play_time play_time], ylim,'LineWidth',1,'Color','r','LineStyle','-');
+
+            % Set sound to play if needed
+            if strcmpi(param.night,'Stim 1') || strcmpi(param.night,'Stim 4') || (strcmpi(param.night,'Adapt') && strcmpi(param.an,'On'))
+                set_play_flag(s,'play'); set_marker_flag(s,'marker');
+            elseif strcmpi(param.night,'Sham') || (strcmpi(param.night,'Adapt') && strcmpi(param.an,'Off'))
+                set_play_flag(s,'noplay'); set_marker_flag(s,'marker');
+            else
+                error('Incorrect play flag. Not clear whether to play sound or not.');
+            end
+
+            % Set volume
+            sparam = s.UserData; sparam.vl = param.vl; s.UserData = sparam;
+
+            % Set record of which data load trigged the sound call
+            sparam = s.UserData; sparam.data_count = data_count; s.UserData = sparam;
+
+            % Adjust start duration
+            delay_duration = toc(clock) - delay;
+            start_time = param.fd - time_from_end - delay_duration - measured_correction_fd;
+            %[param.fd time_from_end delay_duration start_time] % debug info
+            if start_time <= 0; start_time = 0; disp([datestr(now,'HH:MM:SS.FFF') ' Warning. Delay 1 may not be accurate.']); end
+            s.StartDelay = start_time;
+
+            %disp([datestr(now,'SS.FFF') ' ' num2str(data_count) ' Info. Sound playing process started.']);
+            start(s);
+
+            %figure(4); plot(time,alg_in); hold all; plot(locations/param.fs,peaks,'x')
+            %figure(4); plot(time,alg_in); hold all; plot(time(end)-time_from_end,peak,'x')
+            %figure(1); plot(y); drawnow
+
+            % Loop
+            param.state = 1; 
+    
+        else 
+            param.state = 0;
         end
-        
-        % Set volume
-        sparam = s.UserData; sparam.vl = param.vl; s.UserData = sparam;
-        
-        % Set record of which data load trigged the sound call
-        sparam = s.UserData; sparam.data_count = data_count; s.UserData = sparam;
-        
-        % Adjust start duration
-        delay_duration = toc(clock) - delay;
-        start_time = param.fd - time_from_end - delay_duration - measured_correction_fd;
-        %[param.fd time_from_end delay_duration start_time] % debug info
-        if start_time <= 0; start_time = 0; disp([datestr(now,'HH:MM:SS.FFF') ' Warning. Delay 1 may not be accurate.']); end
-        s.StartDelay = start_time;
-        
-        %disp([datestr(now,'SS.FFF') ' ' num2str(data_count) ' Info. Sound playing process started.']);
-        start(s);
-        
-        %figure(4); plot(time,alg_in); hold all; plot(locations/param.fs,peaks,'x')
-        %figure(4); plot(time,alg_in); hold all; plot(time(end)-time_from_end,peak,'x')
-        %figure(1); plot(y); drawnow
-        
-        % Loop
-        param.state = 1; 
-    else 
-        param.state = 0;
     end
     
     
@@ -110,15 +112,11 @@ elseif param.state == 1;
     
 %% Play sound
 elseif param.state == 2;
-    % dummy state inherited from previous code which was switching from 1
-    % to 4 clicks. Here we jsut forward to net state
-    param.state = 3;
-    
-    % Old deprecated code
     % play_sound function is called automatically by the timer s and deals
     % with the actions for this state so just move automatically on to the
     % next. Pick which state randomly to play one or four clicks
-    
+
+% Older version code for pseduo-randomly selecting 1 and 4 click cases
 %     % Generate bounded random number
 %     x = round((length(param.shuffle) - 1) .* rand(1,1) + 1);
 %     
@@ -142,6 +140,19 @@ elseif param.state == 2;
 %     if isempty(param.shuffle)
 %         param.shuffle = [1 zeros(1,param.loops)]; % note this must match the definition in stim_function.m
 %     end
+    if strcmpi(param.night,'Stim 1')
+        param.state = 4;
+        %disp([datestr(now) ' Info. One click stimulation case. Sound was just played']);
+    elseif strcmpi(param.night,'Stim 4')
+        param.state = 3;
+        %disp([datestr(now) ' Info. Four click stimulation case. First sound was just played. There will be three more after this message']);
+    elseif strcmpi(param.night,'Adapt')
+        param.state = 4;
+    elseif strcmpi(param.night,'Sham')
+        param.state = 4;
+    else
+         error('Incorrect night selection.');
+    end
     
     
 %% Pause before second, third and fourth stim    
@@ -150,10 +161,10 @@ elseif param.state == 3;
     % Check this is the first time in this state
     if strcmp(s.Running,'off')
 
-        if strcmpi(param.night,'Stim') || (strcmpi(param.night,'Adapt') && strcmpi(param.an,'On'))
-            set_play_flag(s,'play');
+        if strcmpi(param.night,'Stim 1') || strcmpi(param.night,'Stim 4') || (strcmpi(param.night,'Adapt') && strcmpi(param.an,'On'))
+            set_play_flag(s,'play'); set_marker_flag(s,'marker');
         elseif strcmpi(param.night,'Sham') || (strcmpi(param.night,'Adapt') && strcmpi(param.an,'Off'))
-            set_play_flag(s,'noplay');
+            set_play_flag(s,'noplay'); set_marker_flag(s,'marker');
         else
             error('Incorrect play flag. Not clear whether to play sound or not.');
         end
@@ -195,6 +206,7 @@ elseif param.state == 4;
     % Wait until sound finished playing
     if strcmp(s.Running,'off')
         set_play_flag(s,'noplay');
+        set_marker_flag(s,'nomarker');
         
         % Set volume
         sparam = s.UserData; sparam.vl = param.vl; s.UserData = sparam;
@@ -227,43 +239,48 @@ elseif param.state == 5;
         pd = alg_in(end-size(param.plot_data,2)+1:end);
         [peaks, locations] = so_detection_algorithm(pd,param);
         [locations, ind] = sort(locations);
-        peaks = peaks(ind);
-        marker = locations(1);
-        %plot(pd); hold on; plot(marker,peaks(1),'x','MarkerSize',10);
         
-        % Align the SO detections
-        align_pos = param.align * param.fs;
-        shift = align_pos - marker;
-        p = circshift(pd,shift);
-        if shift < 0
-            p(end-abs(shift)+1:end) = NaN;
-        elseif shift > 0
-            p(1:abs(shift)) = NaN;
+        if isempty(locations) || numel(locations) == 0
+            param.state = 0;
+        else
+            peaks = peaks(ind);
+            marker = locations(1);
+            %plot(pd); hold on; plot(marker,peaks(1),'x','MarkerSize',10);
+
+            % Align the SO detections
+            align_pos = param.align * param.fs;
+            shift = align_pos - marker;
+            p = circshift(pd,shift);
+            if shift < 0
+                p(end-abs(shift)+1:end) = NaN;
+            elseif shift > 0
+                p(1:abs(shift)) = NaN;
+            end
+            m = (marker + shift)/param.fs - param.align;
+
+            % Store current SO
+            index = param.plot_avg(3);
+            param.plot_data(index,:) = p;
+            param.plot_avg(3) = mod(index,param.plot_avg(1)) + 1;
+
+            % Plot current SO
+            t = (0:1/param.fs:((length(p)/param.fs) - 1/param.fs)) - param.align;   
+            plot(param.ax,t,p,':');
+            %plot(param.ax,m/param.fs,peaks(1),'x','MarkerSize',10);
+
+            % Plot average SO
+            f = findobj(param.ax,'Color','r');
+            if ~isempty(f)
+                delete(f)
+            end
+            plot(param.ax,t,nanmean(param.plot_data),'r');
+
+            % Plot stimulation line
+            plot(param.ax,[param.fd param.fd], ylim(param.ax),'g--','LineWidth',2);
+
+            % Loop
+            param.state = 0;
         end
-        m = (marker + shift)/param.fs - param.align;
-        
-        % Store current SO
-        index = param.plot_avg(3);
-        param.plot_data(index,:) = p;
-        param.plot_avg(3) = mod(index,param.plot_avg(1)) + 1;
-        
-        % Plot current SO
-        t = (0:1/param.fs:((length(p)/param.fs) - 1/param.fs)) - param.align;   
-        plot(param.ax,t,p,':');
-        %plot(param.ax,m/param.fs,peaks(1),'x','MarkerSize',10);
-        
-        % Plot average SO
-        f = findobj(param.ax,'Color','r');
-        if ~isempty(f)
-            delete(f)
-        end
-        plot(param.ax,t,nanmean(param.plot_data),'r');
-        
-        % Plot stimulation line
-        plot(param.ax,[param.fd param.fd], ylim(param.ax),'g--','LineWidth',2);
-        
-        % Loop
-        param.state = 0;
     else
         param.state = 5;
     end  

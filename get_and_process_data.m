@@ -21,8 +21,8 @@ delay = toc(clock);
 % with zeros until actual EEG data is written to it. Load just ~the last 2
 % chunks of data. Also, files aren't always the same size so need to use
 % the smaller one to set how much data to load
-fseek(fid(1),0,'eof'); fseek(fid(2),0,'eof');
-si = ftell(fid(1)); sj = ftell(fid(2)); sk = min(si,sj);
+fseek(fid(1),0,'eof'); fseek(fid(2),0,'eof'); fseek(fid(3),0,'eof');
+si = ftell(fid(1)); sj = ftell(fid(2)); sl = ftell(fid(3)); sk = min([si,sj,sl]);
 if sk>2^18
     sk=2^18;  
     if strcmp(status,'online')
@@ -36,11 +36,14 @@ else
 end
 s1 = fseek(fid(1),fsk,'eof'); % seek value must be even to read the file correctly online, odd to read file offline
 s2 = fseek(fid(2),fsk,'eof');
+s3 = fseek(fid(3),fsk,'eof');
 %[ferror(fid(1)) ferror(fid(2))] % debug info
 
 % Load data
 inn = fread(fid(1),'int16');
-ref = fread(fid(2),'int16');
+ref1 = fread(fid(2),'int16');
+ref2 = fread(fid(3),'int16');
+ref = (ref1 + ref2) / 2; % for linked Mastoid reference
 y = scale * (inn - ref);
 %figure(1); plot(y); drawnow
 
@@ -70,7 +73,7 @@ data_padded   = [data; flipud(data)]; % remove edge effect - isn't necessary, ca
 alg_in_padded = filter(b,a,data_padded);
 alg_in = alg_in_padded(1:length(data));
 
-
+%figure(2); plot(data,'b'); hold all; plot(alg_in,'r')
 %% Plot data
 % scrolling_data_plot(2,time_vector,data,alg_in,1,epoch);
 % datetick('x','keeplimits'); axis([start_time end_time -500 500]);
