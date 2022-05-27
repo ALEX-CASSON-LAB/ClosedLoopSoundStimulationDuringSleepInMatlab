@@ -18,6 +18,7 @@ This code uses the following third party tools:
  - nanmean.m: Jan Gläscher (2022). NaN Suite (https://www.mathworks.com/matlabcentral/fileexchange/6837-nan-suite), MATLAB Central File Exchange. License details are given in LICENSE_nanmean.txt
  - generate_sounds.m: The 1/f noise filter in this function uses the algorithm from Kasdin, N.J.. Discrete simulation of colored noise and stochastic processes and
 1/f^{\alpha} power law noise generation. Proc IEEE 1995;83(5):802–27. The code was taken from a "Matlab answer" (https://uk.mathworks.com/matlabcentral/answers) to a 2007 post called "How to do I generate pink noise in Matlab or Simulink?". As far as we are aware this post is no longer online, but the code was freely available online for use. 
+ - ebm_header.m: Uses code from the biosig project http://biosig.sourceforge.net/ and https://doi.org/10.1155%2F2011%2F935364 which is released under a GPL3 license. This project uses a GPL3 to match this. See LICENSE for details.
 
 ## Acknowledgements
 We would like to thank Jussi Virkkala, Physicist at Helsingin ja Uudenmaan sairaanhoitopiiri, Finland for his assistance in loading RemLogic EEG traces in to Matlab in real-time.
